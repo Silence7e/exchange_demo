@@ -2,9 +2,12 @@ import { Controller, Get, Param, Query, NotFoundException } from '@nestjs/common
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { MarketService } from './market.service';
 import { getTradingPair } from '@exchange/shared';
+import { RateLimit } from '../common/throttle/rate-limit.decorator';
+import { RateLimitTier } from '../common/throttle/rate-limit.config';
 
 @ApiTags('markets')
 @Controller('markets')
+@RateLimit(RateLimitTier.PUBLIC)
 export class MarketController {
   constructor(private readonly marketService: MarketService) {}
 

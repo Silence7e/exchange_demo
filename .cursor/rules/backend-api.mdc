@@ -46,3 +46,51 @@ Use `ErrorCode` enum from `@exchange/shared`. Throw `HttpException` with `{ code
 ## Modules
 
 Keep domain logic in modules: `auth`, `wallet`, `market`, `trading`, `ws`. Shared infra: `prisma`, `redis`, `common`.
+
+## Rate limiting
+
+Spec: `openspec/specs/api-layer/spec.md` (Rate limiting requirement).
+
+Infrastructure lives in `apps/api/src/common/throttle/`:
+
+- `rate-limit.config.ts` — semantic tiers and numeric limits (single source of truth)
+- `rate-limit.decorator.ts` — `@RateLimit(tier)`, `@NoRateLimit()`
+- `app-throttler.guard.ts` — global guard; tracker: valid JWT → `user:{userId}`, else `ip:{ip}`
+- `redis-throttler.storage.ts` — Redis-backed counters (shared across instances)
+
+Global setup in `app.module.ts`: `ThrottlerModule.forRootAsync` + `APP_GUARD` → `AppThrottlerGuard`.
+
+### Tier assignment (semantic names only)
+
+| Tier | Use for |
+|------|---------|
+| `PUBLIC` | Unauthenticated read endpoints (e.g. `GET /markets/*`) |
+| `STANDARD` | Default; authenticated reads (wallet, order list, `/auth/me`) |
+| `TRADING` | Order place/cancel and other trading writes |
+| `AUTH` | Login, register, refresh |
+| `STRICT` | Sensitive ops (withdraw, password change) |
+
+Do **not** use numeric names like `TEN_TIMES`. Change limits in `rate-limit.config.ts`, not in controllers.
+
+### When adding endpoints
+
+1. Pick the semantic tier; add `@RateLimit(RateLimitTier.X)` on the controller or handler.
+2. Omit `@RateLimit` only when `STANDARD` is correct (global default).
+3. Use `@NoRateLimit()` sparingly (e.g. health checks).
+4. Do not register per-route `ThrottlerGuard` or duplicate `@Throttle()` — use `@RateLimit`.
+5. New sensitive write endpoints → prefer `TRADING` or `STRICT`; new public reads → `PUBLIC`.
+
+```typescript
+import { RateLimit } from '../common/throttle/rate-limit.decorator';
+import { RateLimitTier } from '../common/throttle/rate-limit.config';
+
+@Controller('orders')
+@RateLimit(RateLimitTier.TRADING) // class-level default for writes
+export class TradingController {
+  @Get()
+  @RateLimit(RateLimitTier.STANDARD) // override for reads
+  list() {}
+}
+```
+
+Behavior changes (new tiers, tracker logic, storage) require an OpenSpec change before implementation.
