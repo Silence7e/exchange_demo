@@ -1,0 +1,48 @@
+---
+description: NestJS API conventions — auth cookies, errors, Prisma, validation
+globs: apps/api/**/*
+alwaysApply: false
+---
+
+# Backend API Conventions
+
+Specs: `openspec/specs/api-layer/spec.md`, `user-auth/spec.md`, and domain specs.
+
+## API surface
+
+- Global prefix: `/api/v1/` (set in `main.ts`)
+- Swagger: `/api/docs` — document new endpoints with `@ApiTags`, `@ApiOperation`
+- CORS: `credentials: true`; origin from `CORS_ORIGIN` env
+
+## Error responses
+
+Return consistent shape via `GlobalExceptionFilter`:
+
+```json
+{ "code": "ERROR_CODE", "message": "...", "details": {} }
+```
+
+Use `ErrorCode` enum from `@exchange/shared`. Throw `HttpException` with `{ code, message }` body.
+
+## Authentication
+
+- JWT in httpOnly cookies: `accessToken` (15m), `refreshToken` (7d, path `/api/v1/auth`)
+- `JwtAuthGuard` reads token from cookie, not Authorization header
+- Refresh tokens stored in Redis (`refresh:{userId}`)
+- Login/register responses must NOT return raw JWT strings in JSON body
+- Logout: clear cookies + delete Redis refresh token
+
+## Validation
+
+- DTOs with `class-validator`; global `ValidationPipe` whitelist enabled
+- Import shared enums/types from `@exchange/shared` where applicable
+
+## Data and money
+
+- Prisma for persistence; use transactions for balance/order settlement
+- Never use native `number` for money math; use `@exchange/shared` decimal helpers
+- List endpoints: return `{ data, pagination: { total, limit, offset } }`
+
+## Modules
+
+Keep domain logic in modules: `auth`, `wallet`, `market`, `trading`, `ws`. Shared infra: `prisma`, `redis`, `common`.

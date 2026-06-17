@@ -169,7 +169,17 @@ pnpm --filter @exchange/shared build
 
 ## OpenSpec
 
-Planning artifacts for this project live under `openspec/changes/exchange-platform/`. To propose or apply changes, use the OpenSpec workflow (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`).
+Planning artifacts for this project live under `openspec/changes/archive/`. Active requirements are in `openspec/specs/`. To propose or apply changes, use the OpenSpec workflow (`/opsx:propose`, `/opsx:apply`, `/opsx:archive`).
+
+## Conventions for Contributors & Agents
+
+| Layer | Location | When it applies |
+|-------|----------|-----------------|
+| Requirements (WHAT) | `openspec/specs/<capability>/spec.md` | Source of truth for behavior |
+| OpenSpec context | `openspec/config.yaml` | Auto-injected during OpenSpec propose/apply |
+| Cursor rules | `.cursor/rules/*.mdc` | Auto-applied during daily coding in Cursor |
+
+Key stack decisions: `fetch` + `apiClient`, TanStack Query v5, Zustand (realtime/UI only), httpOnly cookie auth, `@exchange/shared` formatters.
 
 ## License
 

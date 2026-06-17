@@ -1,0 +1,34 @@
+---
+description: Exchange platform monorepo conventions and spec authority
+alwaysApply: true
+---
+
+# Exchange Platform — Project Conventions
+
+Authoritative requirements live in `openspec/specs/<capability>/spec.md`. When in doubt, read the relevant spec before implementing.
+
+## Monorepo layout
+
+- `apps/web` — Next.js frontend
+- `apps/api` — NestJS backend
+- `packages/shared` — shared types, DTOs, enums, formatters, constants (import as `@exchange/shared`)
+
+Use pnpm workspaces. Add cross-app contracts to `packages/shared`, not duplicated in apps.
+
+## Money and precision
+
+- API JSON: monetary values as `string`, never JS float
+- Calculations: `decimal.js` via `@exchange/shared` helpers (`add`, `sub`, `mul`, `isGte`)
+- DB: Prisma `Decimal` / `DECIMAL(36, 18)`
+- Display: `formatPrice`, `formatQuantity`, `formatPercent`, `formatVolume` from `@exchange/shared`
+
+## Design system
+
+- Use semantic Tailwind classes: `text-price-up`, `text-price-down`, `text-bid`, `text-ask`
+- Do not hardcode hex colors in components; tokens are in `apps/web/src/app/globals.css`
+- Default convention: green-up / red-down (`COLOR_CONVENTION` in shared)
+
+## OpenSpec
+
+- New features: use `/opsx:propose` and sync specs on archive
+- Do not contradict synced specs without a new OpenSpec change

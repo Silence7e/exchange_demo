@@ -1,0 +1,45 @@
+---
+description: Next.js frontend stack — fetch, TanStack Query, Zustand, cookies
+globs: apps/web/**/*
+alwaysApply: false
+---
+
+# Frontend Architecture
+
+Spec: `openspec/specs/frontend-architecture/spec.md`
+
+## HTTP client
+
+- Use `apiClient` from `@/lib/api-client` for all REST calls
+- Always `credentials: 'include'` (already set in apiClient)
+- Do not add axios or alternate HTTP clients
+- Handle errors via `ApiError` (`code`, `message`)
+
+## State layering (strict)
+
+| Data | Where |
+|------|-------|
+| REST data (balances, orders, markets, klines) | TanStack Query v5 — `hooks/queries/` |
+| WebSocket ticker, depth, connection status | Zustand — `stores/market-store.ts`, `stores/ws-store.ts` |
+| Current trading pair, chart interval | URL — `/trade/[symbol]`, searchParams |
+| Form inputs (price, quantity) | Component `useState` |
+| Auth session | `useSession` query → `GET /auth/me`; never store JWT in client |
+
+Never put REST-fetched data into Zustand. After mutations, use `queryClient.invalidateQueries`.
+
+## WebSocket
+
+- Use `useWebSocket` from `@/hooks/use-websocket`
+- WS events update Zustand; optionally `queryClient.setQueryData` for order/balance sync
+
+## Auth
+
+- Login/register via `apiClient`; cookies set by server
+- Do not read, store, or pass JWT in localStorage, sessionStorage, or Zustand
+- Protected pages: wrap with `AuthGuard` or check `useSession`
+
+## UI
+
+- Tailwind only; use semantic color tokens for trading UI
+- Import formatters from `@exchange/shared` for all price/quantity/percent display
+- New query hooks go in `apps/web/src/hooks/queries/`

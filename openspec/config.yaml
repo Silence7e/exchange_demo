@@ -1,20 +1,45 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Digital currency exchange monorepo (exchange-platform).
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Structure:
+  - apps/web — Next.js 15 App Router, Tailwind CSS
+  - apps/api — NestJS 10, Prisma, PostgreSQL, Redis, WebSocket
+  - packages/shared — types, DTOs, enums, formatters, trading pair config, WS event contracts
+
+  Tooling: pnpm workspaces, Turborepo, TypeScript.
+
+  Authoritative specs: openspec/specs/<capability>/spec.md
+
+  Frontend (confirmed):
+  - HTTP: native fetch via apps/web/src/lib/api-client.ts (credentials: 'include'), no axios
+  - Server state: TanStack Query v5 (hooks in apps/web/src/hooks/queries/)
+  - Realtime/UI state: Zustand (apps/web/src/stores/), never duplicate REST data in Zustand
+  - Route state: URL path/searchParams (e.g. /trade/BTC-USDT)
+  - Form drafts: component useState
+  - Auth: httpOnly cookies only; never localStorage/sessionStorage/Zustand for JWT
+
+  Backend:
+  - JWT via httpOnly Set-Cookie (accessToken, refreshToken); refresh token in Redis
+  - API prefix /api/v1/, errors { code, message, details? }
+  - Monetary values: string in JSON, decimal.js in code, Prisma DECIMAL in DB
+  - class-validator DTOs with whitelist; Swagger at /api/docs
+  - CORS credentials: true
+
+  Design system:
+  - Semantic tokens: text-price-up, text-price-down, text-bid, text-ask (no hardcoded hex in components)
+  - Formatters from @exchange/shared: formatPrice, formatQuantity, formatPercent, formatVolume
+  - COLOR_CONVENTION: green-up / red-down (configurable via packages/shared)
+
+  OpenSpec workflow: propose → apply → archive. Check openspec/specs before changing behavior.
+
+rules:
+  proposal:
+    - Reference existing capabilities in openspec/specs/ before adding new ones
+    - Non-goals are product scope only, not rejected library alternatives
+  design:
+    - Align with confirmed stack: fetch, TanStack Query, Zustand, httpOnly cookies
+    - Cross-cutting types and formatters belong in packages/shared
+  tasks:
+    - Keep tasks small and verifiable; mark complete in tasks.md when done
