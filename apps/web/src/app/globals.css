@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0b0e11;
+  --foreground: #eaecef;
+  --surface: #1e2329;
+  --border: #2b3139;
+  --color-price-up: #22c55e;
+  --color-price-down: #ef4444;
+  --color-price-neutral: #848e9c;
+  --color-bid: #22c55e;
+  --color-ask: #ef4444;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-price-up: var(--color-price-up);
+  --color-price-down: var(--color-price-down);
+  --color-price-neutral: var(--color-price-neutral);
+  --color-bid: var(--color-bid);
+  --color-ask: var(--color-ask);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.text-price-up { color: var(--color-price-up); }
+.text-price-down { color: var(--color-price-down); }
+.text-price-neutral { color: var(--color-price-neutral); }
+.text-bid { color: var(--color-bid); }
+.text-ask { color: var(--color-ask); }
+.bg-bid { background-color: color-mix(in srgb, var(--color-bid) 15%, transparent); }
+.bg-ask { background-color: color-mix(in srgb, var(--color-ask) 15%, transparent); }

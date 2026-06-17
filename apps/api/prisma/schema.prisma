@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  wallet       Wallet?
+  orders       Order[]
+}
+
+model Wallet {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balances  Balance[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Balance {
+  id        String   @id @default(cuid())
+  walletId  String
+  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  asset     String
+  available Decimal  @default(0) @db.Decimal(36, 18)
+  frozen    Decimal  @default(0) @db.Decimal(36, 18)
+  updatedAt DateTime @updatedAt
+
+  @@unique([walletId, asset])
+}
+
+model TradingPair {
+  id                String   @id @default(cuid())
+  symbol            String   @unique
+  baseAsset         String
+  quoteAsset        String
+  pricePrecision    Int
+  quantityPrecision Int
+  minQuantity       Decimal  @db.Decimal(36, 18)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol          String
+  side            String
+  type            String
+  price           Decimal?    @db.Decimal(36, 18)
+  quantity        Decimal     @db.Decimal(36, 18)
+  filledQuantity  Decimal     @default(0) @db.Decimal(36, 18)
+  status          String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  trades          Trade[]
+
+  @@index([userId, status])
+  @@index([symbol, status])
+}
+
+model Trade {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  symbol    String
+  side      String
+  price     Decimal  @db.Decimal(36, 18)
+  quantity  Decimal  @db.Decimal(36, 18)
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model Kline {
+  id        String   @id @default(cuid())
+  symbol    String
+  interval  String
+  openTime  DateTime
+  open      Decimal  @db.Decimal(36, 18)
+  high      Decimal  @db.Decimal(36, 18)
+  low       Decimal  @db.Decimal(36, 18)
+  close     Decimal  @db.Decimal(36, 18)
+  volume    Decimal  @db.Decimal(36, 18)
+
+  @@unique([symbol, interval, openTime])
+  @@index([symbol, interval, openTime])
+}
