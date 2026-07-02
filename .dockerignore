@@ -1,0 +1,17 @@
+node_modules
+.git
+.cursor
+.openspec
+**/.next
+**/dist
+**/tsconfig.tsbuildinfo
+**/.turbo
+**/coverage
+**/*.md
+!README.md
+openspec/changes
+.env
+.env.*
+!.env.example
+apps/web/.env.local
+apps/api/.env

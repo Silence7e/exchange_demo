@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: exchange-api-migrate
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: exchange/api:migrator
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: exchange-api-secrets

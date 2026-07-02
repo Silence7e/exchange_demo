@@ -24,6 +24,7 @@ mono_test/
 │   ├── shared/       # Types, DTOs, formatters, trading pair config
 │   └── config-eslint/
 ├── openspec/         # OpenSpec change proposals & specs
+├── k8s/              # Kubernetes manifests (web×2, api×1)
 ├── docker-compose.yml
 └── turbo.json
 ```
@@ -166,6 +167,46 @@ pnpm --filter @exchange/shared build
 | BTC-USDT | 2 | 6 |
 | ETH-USDT | 2 | 5 |
 | SOL-USDT | 2 | 4 |
+
+## Kubernetes (Web ×2, API ×1)
+
+Current production layout: **2 web pods** (stateless, rolling updates) + **1 api pod** (in-memory matching engine and WebSocket require single replica for now).
+
+### Build images
+
+From the repository root:
+
+```bash
+# API runtime + migrator targets
+docker build -f apps/api/Dockerfile -t exchange/api:latest .
+docker build -f apps/api/Dockerfile --target migrator -t exchange/api:migrator .
+
+# Web — set public URLs at build time (baked into Next.js client bundle)
+docker build -f apps/web/Dockerfile \
+  --build-arg NEXT_PUBLIC_API_URL=https://your-domain.example.com/api/v1 \
+  --build-arg NEXT_PUBLIC_WS_URL=wss://your-domain.example.com/ws \
+  -t exchange/web:latest .
+```
+
+### Deploy
+
+1. Provision managed PostgreSQL and Redis (or cluster services).
+2. Copy `k8s/api-secret.example.yaml` → `k8s/api-secret.yaml`, fill in real values.
+3. Update `k8s/api-configmap.yaml` (`CORS_ORIGIN`) and `k8s/ingress.yaml` (host).
+4. Apply manifests:
+
+```bash
+kubectl apply -f k8s/api-secret.yaml
+kubectl apply -f k8s/api-configmap.yaml
+kubectl apply -f k8s/api-service.yaml
+kubectl apply -f k8s/web-service.yaml
+kubectl apply -f k8s/api-deployment.yaml   # replicas: 1
+kubectl apply -f k8s/web-deployment.yaml   # replicas: 2
+kubectl apply -f k8s/ingress.yaml
+kubectl apply -f k8s/migrate-job.yaml      # run once per schema change
+```
+
+No PM2 — each container runs a single Node process; Kubernetes handles restarts and web rolling updates.
 
 ## OpenSpec
 
