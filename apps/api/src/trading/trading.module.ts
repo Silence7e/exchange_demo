@@ -13,7 +13,9 @@ import { WsModule } from '../ws/ws.module';
 export class TradingModule implements OnModuleInit {
   constructor(private readonly tradingService: TradingService) {}
 
-  async onModuleInit() {
-    await this.tradingService.restoreOpenOrders();
+  onModuleInit() {
+    // Fire-and-forget so a slow or unreachable database never blocks
+    // application bootstrap (critical on serverless cold starts).
+    void this.tradingService.restoreOpenOrders().catch(() => undefined);
   }
 }

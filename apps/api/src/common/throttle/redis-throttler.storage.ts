@@ -44,12 +44,23 @@ end
 return {hits, time_to_expire, 0, 0}
 `;
 
+const REDIS_OP_TIMEOUT_MS = 1500;
+
 @Injectable()
 export class RedisThrottlerStorage implements ThrottlerStorage {
   private scriptSha: string | null = null;
   private readonly prefix = 'throttle';
 
   constructor(private readonly redis: RedisService) {}
+
+  private withTimeout<T>(operation: Promise<T>): Promise<T> {
+    return Promise.race([
+      operation,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error('REDIS_TIMEOUT')), REDIS_OP_TIMEOUT_MS),
+      ),
+    ]);
+  }
 
   async increment(
     key: string,
@@ -63,15 +74,17 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
     const effectiveBlockDuration = blockDuration > 0 ? blockDuration : ttl;
 
     try {
-      const sha = await this.loadScript();
-      const result = (await this.redis.evalsha(
-        sha,
-        2,
-        hitsKey,
-        blockKey,
-        String(ttl),
-        String(limit),
-        String(effectiveBlockDuration),
+      const sha = await this.withTimeout(this.loadScript());
+      const result = (await this.withTimeout(
+        this.redis.evalsha(
+          sha,
+          2,
+          hitsKey,
+          blockKey,
+          String(ttl),
+          String(limit),
+          String(effectiveBlockDuration),
+        ),
       )) as [number, number, number, number];
 
       return {
@@ -85,7 +98,15 @@ export class RedisThrottlerStorage implements ThrottlerStorage {
         this.scriptSha = null;
         return this.increment(key, ttl, limit, blockDuration, throttlerName);
       }
-      throw error;
+      // Fail open: when Redis is unavailable, allow the request through rather
+      // than blocking the entire API (important on serverless cold starts).
+      this.scriptSha = null;
+      return {
+        totalHits: 1,
+        timeToExpire: Math.ceil(ttl / 1000),
+        isBlocked: false,
+        timeToBlockExpire: 0,
+      };
     }
   }
 
