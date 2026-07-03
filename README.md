@@ -37,6 +37,8 @@ mono_test/
 
 ## Quick Start
 
+> For the full local development guide including troubleshooting and daily workflows, see [docs/development.md](./docs/development.md).
+
 ### 1. Install dependencies
 
 ```bash
