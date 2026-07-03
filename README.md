@@ -168,6 +168,13 @@ pnpm --filter @exchange/shared build
 | ETH-USDT | 2 | 5 |
 | SOL-USDT | 2 | 4 |
 
+## Deployment
+
+| Target | Guide |
+|--------|-------|
+| Vercel (API + Web) | [docs/deployment-vercel.md](./docs/deployment-vercel.md) |
+| Kubernetes | See below |
+
 ## Kubernetes (Web ×2, API ×1)
 
 Current production layout: **2 web pods** (stateless, rolling updates) + **1 api pod** (in-memory matching engine and WebSocket require single replica for now).
