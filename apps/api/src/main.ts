@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
-const main = async () => {
+const bootstrap = async () => {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
@@ -40,4 +40,4 @@ const main = async () => {
   console.log(`Swagger docs at http://localhost:${port}/api/docs`);
 };
 
-main();
+bootstrap();
