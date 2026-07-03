@@ -10,6 +10,25 @@
 
 ---
 
+## One-time vs Recurring Tasks
+
+| Task | When |
+|------|------|
+| `pnpm install` | Once after clone; again when `pnpm-lock.yaml` changes (after `git pull`) |
+| Copy `.env` files | Once after clone; never again unless you delete them |
+| `docker compose up -d` | Once after clone to create volumes; again after machine restart |
+| `pnpm prisma migrate dev` | Once after clone; again when new migration files appear after `git pull`, or after editing `schema.prisma` |
+| `pnpm prisma:seed` | Once after clone (or after `prisma migrate reset`) |
+| `pnpm --filter @exchange/shared build` | Once after clone; again after editing `packages/shared/src/` |
+| `pnpm dev` | Every development session |
+
+Turborepo handles build ordering automatically — `pnpm dev` and `pnpm build`
+will build `@exchange/shared` before starting the API or Web. The only task
+that is never automated is `prisma migrate dev`, because it modifies the
+database schema and requires an explicit decision.
+
+---
+
 ## First-time Setup
 
 ### 1. Clone and install
